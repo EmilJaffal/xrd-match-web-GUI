@@ -70,10 +70,14 @@ for i in range(1, max_files + 1):
                     }
                 )
             ], style={"position": "absolute", "top": "10px", "right": "10px", "display": "flex"}),
-            html.H4(id=f"lattice-params-header-{i}", children=f"CIF File {i}", style={"textAlign": "center", "marginTop": "0px", "fontWeight": "normal"}),
+            html.H4(id=f"lattice-params-header-{i}", children=f"CIF File {i}", style={"textAlign": "center", "marginTop": "0px", "marginBottom": "5px", "fontWeight": "normal"}),
             # Lattice parameters for each block:
+            
             html.Div([
+                html.H5("Cell parameters", style={"textAlign": "center", "marginTop": "0px", "marginBottom": "0px", "paddingTop": "0px", "paddingBottom": "0px", "fontWeight": "normal"}),  # Cell parameters heading
                 # Row for a, b, c:
+                
+            html.Div([
                 html.Div([
                     html.Label("a:"),
                     dcc.Input(
@@ -82,6 +86,7 @@ for i in range(1, max_files + 1):
                         style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                     )
                 ], style={"display": "inline-block", "marginRight": "10px"}),
+
                 html.Div([
                     html.Label("b:"),
                     dcc.Input(
@@ -90,6 +95,7 @@ for i in range(1, max_files + 1):
                         style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                     )
                 ], style={"display": "inline-block", "marginRight": "10px"}),
+
                 html.Div([
                     html.Label("c:"),
                     dcc.Input(
@@ -97,73 +103,81 @@ for i in range(1, max_files + 1):
                         type="number",
                         style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                     )
-                ], style={"display": "inline-block", "marginRight": "10px"})
-            ], style={"display": "block"}),
+                ], style={"display": "inline-block", "marginRight": "10px"}),
 
-            # New row for α, β, γ:
+                html.Div([
+                    html.Div([
+                        html.Label("α:"),
+                        dcc.Input(
+                            id=f"lattice-{i}-alpha",
+                            type="number",
+                            style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
+                        )
+                    ], style={"display": "inline-block", "marginRight": "10px"}),
+
+                    html.Div([
+                        html.Label("β:"),
+                        dcc.Input(
+                            id=f"lattice-{i}-beta",
+                            type="number",
+                            style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
+                        )
+                    ], style={"display": "inline-block", "marginRight": "10px"}),
+
+                    html.Div([
+                        html.Label("γ:"),
+                        dcc.Input(
+                            id=f"lattice-{i}-gamma",
+                            type="number",
+                            style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
+                        )
+                    ], style={"display": "inline-block", "marginRight": "10px", "fontSize": "18px"})
+                ], style={"display": "flex", "alignItems": "center", "fontSize": "18px"})
+            ], style={"display": "flex", "flexWrap": "wrap", "gap": "10px"})]),
+
+        html.Div([
+            # Intensity scaling slider
             html.Div([
-                html.Div([
-                    html.Label("α:"),
-                    dcc.Input(
-                        id=f"lattice-{i}-alpha",
-                        type="number",
-                        style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
-                    )
-                ], style={"display": "inline-block", "marginRight": "10px"}),
-                html.Div([
-                    html.Label("β:"),
-                    dcc.Input(
-                        id=f"lattice-{i}-beta",
-                        type="number",
-                        style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
-                    )
-                ], style={"display": "inline-block", "marginRight": "10px"}),
-                html.Div([
-                    html.Label("γ:"),
-                    dcc.Input(
-                        id=f"lattice-{i}-gamma",
-                        type="number",
-                        style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
-                    )
-                ], style={"display": "inline-block", "marginRight": "10px", "fontSize": "18px"})
-            ], style={"display": "block", "fontSize": "18px"}),
-            # Existing Scaling slider:
+                html.Label("Intensity scaling:"),
+                dcc.Slider(
+                    id=f"intensity-{i}",
+                    min=0,
+                    max=100,
+                    step=1,
+                    value=100,
+                    marks={i: str(i) for i in range(0, 101, 10)},  # Customize marks for slider ticks
+                    tooltip={"placement": "bottom", "always_visible": True}
+                )
+            ], style={"flex": "1 1 300px", "marginRight": "10px", "fontSize": "18px"}),  # Adjusted for flex
+
+            # Background level slider
+            html.Div([
+                html.Label("Background level:"),
+                dcc.Slider(
+                    id=f"background-{i}",
+                    min=0,
+                    max=100,
+                    step=1,
+                    value=0,
+                    marks={i: str(i) for i in range(0, 101, 10)},  # Customize marks for slider ticks
+                    tooltip={"placement": "bottom", "always_visible": True}
+                )
+            ], style={"flex": "1 1 300px", "marginRight": "10px", "fontSize": "18px", "fontFamily": "Open Sans"}),  # Adjusted for flex
+
+            # Shift unit cell slider
             html.Div([
                 html.Label("Shift unit cell:"),
                 dcc.Slider(
                     id=f"lattice-scale-{i}",
                     min=-5,
                     max=5,
-                    step=0.1,  # Allow 0.1 increments
+                    step=0.1,
                     value=0,
                     marks={j: f"{j}%" for j in range(-5, 6)},
                     tooltip={"placement": "bottom", "always_visible": True}
                 )
-            ], style={"marginTop": "20px", "marginBottom": "10px", "fontSize": "18px"}),
-            
-            # New per-CIF Intensity and Background controls:
-            html.Div([
-                html.Label("Intensity scaling (0-100):"),
-                dcc.Input(
-                    id=f"intensity-{i}",
-                    type="number",
-                    value=100,
-                    min=0,
-                    max=100,
-                    style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
-                )
-            ], style={"display": "inline-block", "marginRight": "10px", "fontSize": "18px"}),
-            html.Div([
-                html.Label("Background level (0-100):"),
-                dcc.Input(
-                    id=f"background-{i}",
-                    type="number",
-                    value=0,
-                    min=0,
-                    max=100,
-                    style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
-                )
-            ], style={"display": "inline-block", "marginRight": "10px", "fontSize": "18px", "fontFamily": "Open Sans"}),
+            ], style={"flex": "1 1 300px", "marginRight": "10px", "fontSize": "18px"})  # Adjusted for flex
+        ], style={"display": "flex", "flexWrap": "wrap", "gap": "10px"})
         ]
     )
     lattice_params_blocks.append(block)
@@ -257,10 +271,10 @@ app.layout = html.Div(
                 max=1,
                 step=0.1,
                 value=0.9,
-                marks={i/10: str(i/10) for i in range(11)},
+                marks={i/10: str(i*10) for i in range(11)},  # Marks showing 0, 10, ..., 100
                 tooltip={"placement": "bottom", "always_visible": True}
             )
-        ], style={"marginTop": "10px", "marginBottom": "10px", "fontSize": "24px"}),
+        ], style={"marginTop": "10px", "marginBottom": "10px", "fontSize": "18px", "width": "14.3%", "marginLeft": "21px"}),
         
         # Download Plot button.
         html.Div([
