@@ -143,7 +143,7 @@ def parse_xy(contents):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     s = StringIO(decoded.decode('utf-8'))
-    df = pd.read_csv(s, delim_whitespace=True, header=None)
+    df = pd.read_csv(s, sep='\s+', header=None)
     df.columns = ['2_theta', 'intensity']
     return df
 
@@ -155,5 +155,6 @@ def parse_cif(contents):
     decoded = base64.b64decode(content_string)
     s = StringIO(decoded.decode('utf-8'))
     parser = CifParser(s)
-    structures = parser.get_structures()
+    # Use parse_structures instead of the deprecated get_structures
+    structures = parser.parse_structures()  # You can pass primitive=True if needed
     return structures[0]

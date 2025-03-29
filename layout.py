@@ -17,7 +17,8 @@ upload_style = {
     'display': 'flex',
     'justifyContent': 'center',
     'alignItems': 'center',
-    "fontSize": "24px"
+    "fontSize": "24px",
+    "fontWeight": "normal"
 }
 
 # Predefine lattice parameter blocks for up to 5 CIF files.
@@ -30,10 +31,11 @@ for i in range(1, max_files + 1):
         style={
             "position": "relative",  # for absolute positioning of buttons
             "border": "1px solid #ccc",
-            "padding": "20px",  # increased padding for a bigger window
-            "marginBottom": "10px",
+            "padding": "18px",  # increased padding for a bigger window
+            "marginBottom": "8px",
             "display": "none",
-            "fontSize": "24px"  # roughly 1.5× the base size
+            "fontSize": "24px",  # roughly 1.5× the base size
+            "fontWeight": "normal"
         },
         children=[
             # Reset and Delete buttons (top-right corner)
@@ -43,14 +45,14 @@ for i in range(1, max_files + 1):
                     id=f"reset-{i}",
                     n_clicks=0,
                     style={
-                        "backgroundColor": "#cccccc",
-                        "color": "black",
+                        "backgroundColor": "lightgrey",
+                        "color": "white",
                         "fontSize": "14px",
                         "border": "none",
-                        "borderRadius": "4px",
+                        "borderRadius": "8px",
                         "padding": "4px 8px",
-                        "width": "60px",
-                        "marginRight": "5px"
+                        "width": "100px",
+                        "marginRight": "10px"
                     }
                 ),
                 html.Button(
@@ -62,13 +64,13 @@ for i in range(1, max_files + 1):
                         "color": "white",
                         "fontSize": "14px",
                         "border": "none",
-                        "borderRadius": "4px",
+                        "borderRadius": "8px",
                         "padding": "4px 8px",
-                        "width": "60px"
+                        "width": "100px"
                     }
                 )
             ], style={"position": "absolute", "top": "10px", "right": "10px", "display": "flex"}),
-            html.H4(id=f"lattice-params-header-{i}", children=f"CIF File {i}", style={"textAlign": "center", "marginTop": "0px"}),
+            html.H4(id=f"lattice-params-header-{i}", children=f"CIF File {i}", style={"textAlign": "center", "marginTop": "0px", "fontWeight": "normal"}),
             # Lattice parameters for each block:
             html.Div([
                 # Row for a, b, c:
@@ -127,7 +129,7 @@ for i in range(1, max_files + 1):
             ], style={"display": "block", "fontSize": "18px"}),
             # Existing Scaling slider:
             html.Div([
-                html.Label("Scaling (%):"),
+                html.Label("Shift unit cell:"),
                 dcc.Slider(
                     id=f"lattice-scale-{i}",
                     min=-5,
@@ -138,9 +140,10 @@ for i in range(1, max_files + 1):
                     tooltip={"placement": "bottom", "always_visible": True}
                 )
             ], style={"marginTop": "20px", "marginBottom": "10px", "fontSize": "18px"}),
+            
             # New per-CIF Intensity and Background controls:
             html.Div([
-                html.Label("Intensity Scaling (0-100):"),
+                html.Label("Intensity scaling (0-100):"),
                 dcc.Input(
                     id=f"intensity-{i}",
                     type="number",
@@ -151,7 +154,7 @@ for i in range(1, max_files + 1):
                 )
             ], style={"display": "inline-block", "marginRight": "10px", "fontSize": "18px"}),
             html.Div([
-                html.Label("Background Level (0-100):"),
+                html.Label("Background level (0-100):"),
                 dcc.Input(
                     id=f"background-{i}",
                     type="number",
@@ -168,7 +171,18 @@ for i in range(1, max_files + 1):
 app.layout = html.Div(
     style={"fontFamily": "Open Sans", "fontSize": "16px"},  # Global font style.
     children=[
-        html.H1("XRD Pattern Customizer", style={"fontSize": "32px"}),
+        html.Div(
+            children=[
+                html.H1("XRD Pattern Customizer", style={"fontSize": "32px", "fontWeight": "normal"}),
+            ],
+            style={
+                "display": "flex",
+                "justifyContent": "center",  # Centers horizontally
+                "alignItems": "center",      # Centers vertically
+                "height": "5vh",           # Full height of the viewport
+                "textAlign": "center"        # Ensures text is centered
+            }
+        ),
         
         # Upload Section for .xy file.
         html.Div([
@@ -177,7 +191,7 @@ app.layout = html.Div(
                 html.Div(
                     dcc.Upload(
                         id="upload-xy",
-                        children=html.Div("Drop a .xy file or click to select"),
+                        children=html.Div("Drop an .xy file or click to select"),
                         multiple=False,
                         accept=".xy",
                         style=upload_style
@@ -206,12 +220,12 @@ app.layout = html.Div(
                 html.Div(
                     dcc.Upload(
                         id="upload-cif",
-                        children=html.Div("Drop one or more .cif files or click to select"),
+                        children=html.Div("Drop one or more .cif files or click to select (do this first)"),
                         multiple=True,
                         accept=".cif",
                         style=upload_style
                     ),
-                    style={"width": "90%", "display": "inline-block", "verticalAlign": "top"}
+                    style={"width": "90%", "display": "inline-block", "verticalAlign": "top", "fontWeight": "normal"}
                 ),
                 html.Div(
                     html.Span(
@@ -236,7 +250,7 @@ app.layout = html.Div(
         
         # Global Pattern Opacity control remains here.
         html.Div([
-            html.Label("Pattern Opacity (0-1):"),
+            html.Label("Pattern opacities:"),
             dcc.Slider(
                 id="opacity-slider",
                 min=0,
@@ -246,12 +260,12 @@ app.layout = html.Div(
                 marks={i/10: str(i/10) for i in range(11)},
                 tooltip={"placement": "bottom", "always_visible": True}
             )
-        ], style={"marginTop": "10px", "marginBottom": "10px", "fontSize": "18px"}),
+        ], style={"marginTop": "10px", "marginBottom": "10px", "fontSize": "24px"}),
         
         # Download Plot button.
         html.Div([
             html.A(
-                html.Button("Download Plot", style={
+                html.Button("Download plot", style={
                     "margin-left": "10px",
                     "padding": "9px 18px",  # Increased from 6px 12px
                     "backgroundColor": "#4CAF50",
@@ -271,7 +285,7 @@ app.layout = html.Div(
         # XRD Plot.
         html.Div([
             dcc.Graph(id="xrd-plot")
-        ], id="plot-container", style={"width": "100%", "height": "600px"}),
+        ], id="plot-container", style={"width": "100%", "height": "1000px"}),
         
         # Hidden stores.
         dcc.Store(id="cif-store"),
