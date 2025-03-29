@@ -1,5 +1,15 @@
 import math
 import plotly.graph_objects as go
+from dash import Dash
+
+# Include the Google Fonts link for 'Open Sans'
+external_stylesheets = [
+    "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap"
+]
+
+app = Dash(__name__, external_stylesheets=external_stylesheets)
+
+# Your app layout and callbacks go here
 
 def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9):
     """
