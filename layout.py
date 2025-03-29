@@ -160,13 +160,13 @@ for i in range(1, max_files + 1):
                     max=100,
                     style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                 )
-            ], style={"display": "inline-block", "marginRight": "10px", "fontSize": "18px", "fontFamily": "Dejavu Sans"}),
+            ], style={"display": "inline-block", "marginRight": "10px", "fontSize": "18px", "fontFamily": "Open Sans"}),
         ]
     )
     lattice_params_blocks.append(block)
 
 app.layout = html.Div(
-    style={"fontFamily": "Dejavu Sans", "fontSize": "16px"},  # Global font style.
+    style={"fontFamily": "Open Sans", "fontSize": "16px"},  # Global font style.
     children=[
         html.H1("XRD Pattern Customizer", style={"fontSize": "32px"}),
         
