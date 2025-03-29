@@ -7,6 +7,8 @@ from preprocess import parse_xy, parse_cif, normalize_structure, XRDCalculator
 from plot import plot_xrd
 from pymatgen.core import Structure
 import plotly.io as pio
+import io
+import json
 
 # ------------------------------------------------------------------
 # File Upload Check Mark Callbacks
@@ -328,7 +330,22 @@ def update_xrd_plot(xy_data, opacity,
         patterns.append(pattern)
         titles.append(file_name)
     
-    exp_data = pd.read_json(xy_data, orient='split') if xy_data is not None else None
+    exp_data = None  # Default to None if xy_data is not provided
+
+    # Check if xy_data is not None or empty
+    if xy_data:
+        try:
+            # Manually parse the JSON string
+            parsed_data = json.loads(xy_data)
+
+            # Create DataFrame from the parsed data
+            exp_data = pd.DataFrame(parsed_data['data'], columns=parsed_data['columns'], index=parsed_data['index'])
+
+        except ValueError as e:
+            exp_data = None
+    else:
+        exp_data = None
+
     fig = plot_xrd(patterns, titles, "CuKa", experimental_data=exp_data, opacity=opacity)
     
     max_y_list = [max(pattern.y) for pattern in patterns if pattern.y is not None and len(pattern.y) > 0]
