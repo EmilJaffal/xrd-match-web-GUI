@@ -83,6 +83,7 @@ for i in range(1, max_files + 1):
                     dcc.Input(
                         id=f"lattice-{i}-a",
                         type="number",
+                        step=0.1,
                         style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                     )
                 ], style={"display": "inline-block", "marginRight": "10px"}),
@@ -92,6 +93,7 @@ for i in range(1, max_files + 1):
                     dcc.Input(
                         id=f"lattice-{i}-b",
                         type="number",
+                        step=0.1,
                         style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                     )
                 ], style={"display": "inline-block", "marginRight": "10px"}),
@@ -101,6 +103,7 @@ for i in range(1, max_files + 1):
                     dcc.Input(
                         id=f"lattice-{i}-c",
                         type="number",
+                        step=0.1,
                         style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                     )
                 ], style={"display": "inline-block", "marginRight": "10px"}),
@@ -142,10 +145,10 @@ for i in range(1, max_files + 1):
                 dcc.Slider(
                     id=f"intensity-{i}",
                     min=0,
-                    max=100,
+                    max=150,
                     step=1,
                     value=100,
-                    marks={i: str(i) for i in range(0, 101, 10)},  # Customize marks for slider ticks
+                    marks={i: str(i) for i in range(0, 151, 10)},  # Customize marks for slider ticks
                     tooltip={"placement": "bottom", "always_visible": True}
                 )
             ], style={"flex": "1 1 300px", "marginRight": "10px", "fontSize": "18px"}),  # Adjusted for flex
