@@ -2,7 +2,7 @@ import math
 import plotly.graph_objects as go
 import plotly.io as pio
 
-def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9):
+def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, exp_filename=None):
     """
     Generate a Plotly figure of XRD patterns.
     """
@@ -25,7 +25,7 @@ def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9):
             x=experimental_data['2_theta'], 
             y=experimental_data['intensity'],
             mode='lines', 
-            name='Experimental data',
+            name=exp_filename if exp_filename else 'Experimental data',
             line=dict(color='black', width=1)
         ))
     else:
@@ -101,8 +101,5 @@ def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9):
         barmode='overlay',
         plot_bgcolor='white'
     )
-
-    # Save the plot as an image using Kaleido engine without `config` argument
-    pio.write_image(fig, 'xrd_pattern.png', engine="kaleido")
     
     return fig

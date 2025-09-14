@@ -230,55 +230,83 @@ app.layout = html.Div(
                     ),
                     style={"width": "10%", "display": "inline-block", "verticalAlign": "middle"}
                 )
-            ], style={"width": "50%", "display": "inline-block"}),
-            
-            # CIF file upload container.
-            html.Div([
-                html.Div(
-                    dcc.Upload(
-                        id="upload-cif",
-                        children=html.Div("Drop one or more .cif files or click to select (do this first)"),
-                        multiple=True,
-                        accept=".cif",
-                        style=upload_style
-                    ),
-                    style={"width": "90%", "display": "inline-block", "verticalAlign": "top", "fontWeight": "normal"}
-                ),
-                html.Div(
-                    html.Span(
-                        id="cif-upload-status",
-                        style={
-                            "margin-left": "10px",
-                            "color": "green",
-                            "fontSize": "24px",
-                            "position": "relative",
-                            "textAlign": "center",
-                            "left": "20px",
-                            "top": "20px"
-                        }
-                    ),
-                    style={"width": "10%", "display": "inline-block", "verticalAlign": "middle"}
-                )
             ], style={"width": "50%", "display": "inline-block"})
         ], style={"display": "flex", "width": "100%"}),
+
+        # CIF file upload container.
+        html.Div([
+            html.Div(
+                dcc.Upload(
+                    id="upload-cif",
+                    children=html.Div("Drop one or more .cif files or click to select (do this first)"),
+                    multiple=True,
+                    accept=".cif",
+                    style=upload_style
+                ),
+                style={"width": "90%", "display": "inline-block", "verticalAlign": "top", "fontWeight": "normal"}
+            ),
+            html.Div(
+                html.Span(
+                    id="cif-upload-status",
+                    style={
+                        "margin-left": "10px",
+                        "color": "green",
+                        "fontSize": "24px",
+                        "position": "relative",
+                        "textAlign": "center",
+                        "left": "20px",
+                        "top": "20px"
+                    }
+                ),
+                style={"width": "10%", "display": "inline-block", "verticalAlign": "middle"}
+            )
+        ], style={"width": "50%", "display": "inline-block"}),
         
         # Lattice Parameters Container (predefined blocks).
         html.Div(id="lattice-params-container", children=lattice_params_blocks),
         
-        # Global Pattern Opacity control remains here.
+        # Pattern opacities, experimental intensity scaling, and 2θ range side by side
         html.Div([
-            html.Label("Pattern opacities:"),
-            dcc.Slider(
-                id="opacity-slider",
-                min=0,
-                max=1,
-                step=0.1,
-                value=0.9,
-                marks={i/10: str(i*10) for i in range(11)},  # Marks showing 0, 10, ..., 100
-                tooltip={"placement": "bottom", "always_visible": True}
-            )
-        ], style={"marginTop": "10px", "marginBottom": "10px", "fontSize": "18px", "width": "14.3%", "marginLeft": "21px"}),
-        
+            html.Div([
+                html.Label("Pattern opacities:"),
+                dcc.Slider(
+                    id="opacity-slider",
+                    min=0,
+                    max=1,
+                    step=0.1,
+                    value=0.9,
+                    marks={i/10: str(i*10) for i in range(11)},
+                    tooltip={"placement": "bottom", "always_visible": True}
+                )
+            ], style={"fontSize": "18px", "width": "14.3%", "marginLeft": "21px", "marginRight": "10px", "display": "inline-block", "verticalAlign": "middle"}),
+
+            html.Div([
+                html.Label("Experimental intensity scaling:"),
+                dcc.Slider(
+                    id="exp-intensity-slider",
+                    min=0,
+                    max=200,
+                    step=1,
+                    value=100,
+                    marks={i: str(i) for i in range(0, 201, 20)},
+                    tooltip={"placement": "bottom", "always_visible": True}
+                )
+            ], style={"fontSize": "18px", "width": "14.3%", "marginRight": "10px", "display": "inline-block", "verticalAlign": "middle"}),
+
+            html.Div([
+                html.Label("2θ range:"),
+                dcc.RangeSlider(
+                    id="xrange-slider",
+                    min=0,
+                    max=120,
+                    step=1,
+                    value=[10, 120],
+                    marks={i: str(i) for i in range(0, 121, 10)},
+                    tooltip={"placement": "bottom", "always_visible": True}
+                )
+            ], style={"fontSize": "18px", "width": "14.3%", "display": "inline-block", "verticalAlign": "middle"})
+        ], style={"marginTop": "10px", "marginBottom": "10px", "width": "100%", "display": "flex", "alignItems": "center"}),
+
         # Download Plot button.
         html.Div([
             html.A(
@@ -306,7 +334,8 @@ app.layout = html.Div(
         
         # Hidden stores.
         dcc.Store(id="cif-store"),
-        dcc.Store(id="xy-store")
+        dcc.Store(id="xy-store"),
+        dcc.Store(id="cif-order-store")
     ]
 )
 
