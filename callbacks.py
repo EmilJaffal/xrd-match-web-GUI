@@ -52,20 +52,26 @@ def store_xy_file(contents, filename):
     return no_update
 
 @app.callback(
-    Output("cif-store", "data"),
+    [Output("cif-store", "data"),
+     Output("cif-order-store", "data")],
     Input("upload-cif", "contents"),
-    State("upload-cif", "filename")
+    State("upload-cif", "filename"),
+    State("cif-store", "data"),
+    State("cif-order-store", "data")
 )
-def store_cif_files(contents_list, filenames):
-    if contents_list is not None:
-        cif_data = {}
-        for contents, name in zip(contents_list, filenames):
-            try:
-                cif_data[name] = contents
-            except Exception as e:
-                print("Error processing CIF file:", e)
-        return cif_data
-    return no_update
+def store_cif_files(contents_list, filenames, existing_data, existing_order):
+    if contents_list is None:
+        return existing_data if existing_data is not None else no_update, existing_order if existing_order is not None else no_update
+
+    cif_data = existing_data.copy() if existing_data else {}
+    cif_order = existing_order.copy() if existing_order else []
+
+    for contents, name in zip(contents_list, filenames):
+        if name not in cif_order:
+            cif_order.append(name)
+        cif_data[name] = contents
+
+    return cif_data, cif_order
 
 # ------------------------------------------------------------------
 # Lattice Parameter Blocks Update Callback
@@ -79,9 +85,10 @@ def store_cif_files(contents_list, filenames):
     [Output(f"lattice-{i}-alpha", "value") for i in range(1, 6)] +
     [Output(f"lattice-{i}-beta", "value") for i in range(1, 6)] +
     [Output(f"lattice-{i}-gamma", "value") for i in range(1, 6)],
-    Input("cif-store", "data")
+    Input("cif-store", "data"),
+    Input("cif-order-store", "data")
 )
-def update_lattice_params_blocks(cif_data):
+def update_lattice_params_blocks(cif_data, cif_order):
     style_outputs = []
     header_outputs = []
     a_outputs = []
@@ -91,7 +98,7 @@ def update_lattice_params_blocks(cif_data):
     beta_outputs = []
     gamma_outputs = []
     
-    file_names = sorted(cif_data.keys()) if cif_data else []
+    file_names = cif_order if cif_order else []
     num_files = len(file_names)
     
     for i in range(5):
@@ -181,20 +188,25 @@ for i in range(1, 6):
 # ------------------------------------------------------------------
 def make_delete_callback(i):
     @app.callback(
-        Output("cif-store", "data", allow_duplicate=True),
+        [Output("cif-store", "data", allow_duplicate=True),
+         Output("cif-order-store", "data", allow_duplicate=True)],
         Input(f"delete-{i}", "n_clicks"),
         [State("cif-store", "data"),
+         State("cif-order-store", "data"),
          State(f"lattice-params-header-{i}", "children")],
         prevent_initial_call='initial_duplicate'
     )
-    def delete_block(n_clicks, cif_data, file_name):
+    def delete_block(n_clicks, cif_data, cif_order, file_name):
         if not cif_data or not file_name:
-            return no_update
+            return no_update, no_update
         if n_clicks and file_name in cif_data:
             new_data = cif_data.copy()
+            new_order = cif_order.copy() if cif_order else []
             new_data.pop(file_name)
-            return new_data
-        return cif_data
+            if file_name in new_order:
+                new_order.remove(file_name)
+            return new_data, new_order
+        return cif_data, cif_order
     return delete_block
 
 for i in range(1, 6):
@@ -208,6 +220,8 @@ for i in range(1, 6):
     [
         Input("xy-store", "data"),
         Input("opacity-slider", "value"),
+        Input("exp-intensity-slider", "value"),  
+        Input("xrange-slider", "value"),
         # Lattice parameter inputs for blocks 1 to 5.
         Input("lattice-1-a", "value"),
         Input("lattice-2-a", "value"),
@@ -255,9 +269,11 @@ for i in range(1, 6):
         Input("background-4", "value"),
         Input("background-5", "value")
     ],
-    State("cif-store", "data")
+    State("cif-store", "data"),
+    State("cif-order-store", "data"),
+    State("upload-xy", "filename")
 )
-def update_xrd_plot(xy_data, opacity,
+def update_xrd_plot(xy_data, opacity, exp_intensity, xrange,
                     a1, a2, a3, a4, a5,
                     b1, b2, b3, b4, b5,
                     c1, c2, c3, c4, c5,
@@ -267,12 +283,15 @@ def update_xrd_plot(xy_data, opacity,
                     scale1, scale2, scale3, scale4, scale5,
                     intensity1, intensity2, intensity3, intensity4, intensity5,
                     background1, background2, background3, background4, background5,
-                    cif_data):
+                    cif_data, cif_order, xy_filename):
+
+    file_names = cif_order if cif_order else []
+
     if cif_data is None:
         return {}
     patterns = []
     titles = []
-    file_names = sorted(cif_data.keys())
+    file_names = cif_order if cif_order else []
     num_files = len(file_names)
     a_vals = [a1, a2, a3, a4, a5]
     b_vals = [b1, b2, b3, b4, b5]
@@ -284,6 +303,8 @@ def update_xrd_plot(xy_data, opacity,
     intensity_vals = [intensity1, intensity2, intensity3, intensity4, intensity5]
     background_vals = [background1, background2, background3, background4, background5]
     
+    xrange_min, xrange_max = xrange
+
     for i in range(num_files):
         file_name = file_names[i]
         try:
@@ -308,7 +329,7 @@ def update_xrd_plot(xy_data, opacity,
 
         calculator = XRDCalculator(wavelength="CuKa")
         try:
-            pattern = calculator.get_pattern(new_structure, two_theta_range=(10, 120))
+            pattern = calculator.get_pattern(new_structure, two_theta_range=(xrange_min, xrange_max))
         except Exception as e:
             print("Error in XRD calculation for", file_name, ":", e)
             continue
@@ -340,13 +361,21 @@ def update_xrd_plot(xy_data, opacity,
 
             # Create DataFrame from the parsed data
             exp_data = pd.DataFrame(parsed_data['data'], columns=parsed_data['columns'], index=parsed_data['index'])
+            # Scale experimental intensity
+            if exp_intensity is not None and exp_data is not None:
+                exp_data['intensity'] = exp_data['intensity'] * (exp_intensity / 100)
+
+            # Filter experimental data based on xrange
+            col_candidates = ['two_theta', 'x', 'angle']
+            col = next((c for c in col_candidates if c in exp_data.columns), exp_data.columns[0])
+            exp_data = exp_data[(exp_data[col] >= xrange_min) & (exp_data[col] <= xrange_max)]
 
         except ValueError as e:
             exp_data = None
     else:
         exp_data = None
 
-    fig = plot_xrd(patterns, titles, "CuKa", experimental_data=exp_data, opacity=opacity)
+    fig = plot_xrd(patterns, titles, "CuKa", experimental_data=exp_data, opacity=opacity, exp_filename=xy_filename)
     
     max_y_list = [max(pattern.y) for pattern in patterns if pattern.y is not None and len(pattern.y) > 0]
     max_y = max(max_y_list) if max_y_list else 100
