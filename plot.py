@@ -2,7 +2,7 @@ import math
 import plotly.graph_objects as go
 import plotly.io as pio
 
-def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, exp_filename=None):
+def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, exp_filename=None, intensity_values=None):
     """
     Generate a Plotly figure of XRD patterns.
     """
@@ -74,7 +74,7 @@ def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, 
     # Explicitly set the font to "Microsoft Sans Serif" and apply it throughout
     fig.update_layout(
         title=dict(
-            text=f"XRD patterns (wavelength: {wavelength})",
+            text=f"",
             font=dict(family="Microsoft Sans Serif", size=30, color="black")
         ),
         font=dict(family="Microsoft Sans Serif", size=24, color="black"),
@@ -101,5 +101,46 @@ def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, 
         barmode='overlay',
         plot_bgcolor='white'
     )
+    
+    # Add phase composition annotation if intensity values are provided
+    if intensity_values and len(intensity_values) > 0 and len(titles) > 0:
+        # Calculate total intensity
+        total_intensity = sum(intensity_values)
+        
+        if total_intensity > 0:
+            # Build composition text
+            composition_lines = []
+            
+            # Get the default plotly color sequence
+            plotly_colors = [
+                '#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A',
+                '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52'
+            ]
+            
+            for i, (title, intensity) in enumerate(zip(titles, intensity_values)):
+                percentage = (intensity / total_intensity) * 100
+                # Get color - offset by 1 if experimental data is present (black trace comes first)
+                color_idx = i + 1 if experimental_data is not None else i
+                color = plotly_colors[color_idx % len(plotly_colors)]
+                composition_lines.append(
+                    f'<span style="color:{color}">■</span> {title}: {percentage:.1f}%'
+                )
+            
+            composition_text = "<br>".join(composition_lines)
+            
+            # Add annotation in top left
+            fig.add_annotation(
+                text=composition_text,
+                xref="paper", yref="paper",
+                x=0.02, y=0.98,
+                xanchor="left", yanchor="top",
+                showarrow=False,
+                font=dict(family="Microsoft Sans Serif", size=18, color="black"),
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                bordercolor="black",
+                borderwidth=1,
+                borderpad=8,
+                align="left"
+            )
     
     return fig
