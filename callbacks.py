@@ -3,7 +3,7 @@ import pandas as pd
 from dash import Input, Output, State, callback_context, no_update
 import plotly.graph_objects as go
 from layout import app
-from preprocess import parse_xy, parse_cif, normalize_structure, XRDCalculator
+from preprocess import parse_xy, parse_cif, XRDCalculator #, normalize_structure
 from plot import plot_xrd
 from pymatgen.core import Structure
 import plotly.io as pio
@@ -105,7 +105,7 @@ def update_lattice_params_blocks(cif_data, cif_order):
         if i < num_files:
             try:
                 structure = parse_cif(cif_data[file_names[i]])
-                structure = normalize_structure(structure)
+                # structure = normalize_structure(structure)
                 lattice = structure.lattice
                 # Set style so that visible blocks are inline-block and 50% wide.
                 style_outputs.append({
@@ -156,7 +156,11 @@ def make_reset_callback(i):
          Output(f"lattice-{i}-c", "value", allow_duplicate=True),
          Output(f"lattice-{i}-alpha", "value", allow_duplicate=True),
          Output(f"lattice-{i}-beta", "value", allow_duplicate=True),
-         Output(f"lattice-{i}-gamma", "value", allow_duplicate=True)],
+         Output(f"lattice-{i}-gamma", "value", allow_duplicate=True),
+         Output(f"lattice-scale-{i}", "value"),
+         Output(f"lattice-{i}-a", "style", allow_duplicate=True),
+         Output(f"lattice-{i}-b", "style", allow_duplicate=True),
+         Output(f"lattice-{i}-c", "style", allow_duplicate=True)],
         Input(f"reset-{i}", "n_clicks"),
         [State("cif-store", "data"),
          State(f"lattice-params-header-{i}", "children")],
@@ -164,24 +168,97 @@ def make_reset_callback(i):
     )
     def reset_block(n_clicks, cif_data, file_name):
         if not cif_data or not file_name:
-            return no_update, no_update, no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update
         try:
             structure = parse_cif(cif_data[file_name])
-            structure = normalize_structure(structure)
+            # structure = normalize_structure(structure)
             lattice = structure.lattice
+            
+            # Default style (no blue color)
+            default_style = {
+                "width": "100px", 
+                "height": "28px", 
+                "fontSize": "18px", 
+                "margin": "15px"
+            }
+            
             return (round(lattice.a, 4),
                     round(lattice.b, 4),
                     round(lattice.c, 4),
                     round(lattice.alpha, 4),
                     round(lattice.beta, 4),
-                    round(lattice.gamma, 4))
+                    round(lattice.gamma, 4),
+                    0,  # Reset shift slider to 0
+                    default_style,
+                    default_style,
+                    default_style)
         except Exception as e:
             print("Error in reset callback for", file_name, ":", e)
-            return no_update, no_update, no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update
     return reset_block
 
 for i in range(1, 6):
     make_reset_callback(i)
+
+# ------------------------------------------------------------------
+# Shift Unit Cell Callbacks (Update a, b, c values and styles)
+# ------------------------------------------------------------------
+def make_shift_callback(i):
+    @app.callback(
+        [Output(f"lattice-{i}-a", "value", allow_duplicate=True),
+         Output(f"lattice-{i}-b", "value", allow_duplicate=True),
+         Output(f"lattice-{i}-c", "value", allow_duplicate=True),
+         Output(f"lattice-{i}-a", "style"),
+         Output(f"lattice-{i}-b", "style"),
+         Output(f"lattice-{i}-c", "style")],
+        Input(f"lattice-scale-{i}", "value"),
+        [State("cif-store", "data"),
+         State(f"lattice-params-header-{i}", "children")],
+        prevent_initial_call='initial_duplicate'
+    )
+    def shift_unit_cell(scale_value, cif_data, file_name):
+        if not cif_data or not file_name or scale_value is None:
+            return no_update, no_update, no_update, no_update, no_update, no_update
+        try:
+            structure = parse_cif(cif_data[file_name])
+            lattice = structure.lattice
+            
+            # Calculate scale factor
+            scale_factor = 1 + (scale_value / 100)
+            
+            # Calculate new values
+            new_a = round(lattice.a * scale_factor, 4)
+            new_b = round(lattice.b * scale_factor, 4)
+            new_c = round(lattice.c * scale_factor, 4)
+            
+            # Determine style based on whether shifted
+            if scale_value != 0:
+                # Blue style when shifted
+                input_style = {
+                    "width": "100px", 
+                    "height": "28px", 
+                    "fontSize": "18px", 
+                    "margin": "15px",
+                    "color": "blue",
+                    "fontWeight": "bold"
+                }
+            else:
+                # Default style
+                input_style = {
+                    "width": "100px", 
+                    "height": "28px", 
+                    "fontSize": "18px", 
+                    "margin": "15px"
+                }
+            
+            return new_a, new_b, new_c, input_style, input_style, input_style
+        except Exception as e:
+            print("Error in shift callback for", file_name, ":", e)
+            return no_update, no_update, no_update, no_update, no_update, no_update
+    return shift_unit_cell
+
+for i in range(1, 6):
+    make_shift_callback(i)
 
 # ------------------------------------------------------------------
 # Delete Button Callbacks (One per block)
@@ -309,7 +386,7 @@ def update_xrd_plot(xy_data, opacity, exp_intensity, xrange,
         file_name = file_names[i]
         try:
             structure = parse_cif(cif_data[file_name])
-            structure = normalize_structure(structure)
+            # structure = normalize_structure(structure)
         except Exception as e:
             print("Error parsing CIF for", file_name, ":", e)
             continue
@@ -322,7 +399,13 @@ def update_xrd_plot(xy_data, opacity, exp_intensity, xrange,
             new_beta = beta_vals[i]
             new_gamma = gamma_vals[i]
             new_lattice = structure.lattice.from_parameters(new_a, new_b, new_c, new_alpha, new_beta, new_gamma)
-            new_structure = Structure(new_lattice, structure.species, structure.frac_coords)
+            # Rebuild structure preserving all site occupancies
+            new_structure = Structure(
+                new_lattice,
+                [site.species for site in structure.sites],
+                [site.frac_coords for site in structure.sites],
+                coords_are_cartesian=False
+            )
         except Exception as e:
             print("Error updating lattice for", file_name, ":", e)
             new_structure = structure
@@ -375,7 +458,12 @@ def update_xrd_plot(xy_data, opacity, exp_intensity, xrange,
     else:
         exp_data = None
 
-    fig = plot_xrd(patterns, titles, "CuKa", experimental_data=exp_data, opacity=opacity, exp_filename=xy_filename)
+    # Prepare intensity values for composition calculation
+    active_intensities = [intensity_vals[i] for i in range(num_files) if intensity_vals[i] is not None]
+    if not active_intensities:  # If all are None, use default 100 for all
+        active_intensities = [100] * num_files
+
+    fig = plot_xrd(patterns, titles, "CuKa", experimental_data=exp_data, opacity=opacity, exp_filename=xy_filename, intensity_values=active_intensities)
     
     max_y_list = [max(pattern.y) for pattern in patterns if pattern.y is not None and len(pattern.y) > 0]
     max_y = max(max_y_list) if max_y_list else 100

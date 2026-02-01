@@ -124,17 +124,17 @@ class XRDCalculator(AbstractDiffractionPatternCalculator):
             xrd.normalize(mode="max", value=100)
         return xrd
 
-def normalize_structure(structure: Structure) -> Structure:
-    """
-    Normalize a structure by setting all site occupancies to 1.
-    """
-    species = []
-    coords = []
-    for site in structure:
-        max_species = max(site.species.items(), key=lambda x: x[1])[0]
-        species.append(max_species)
-        coords.append(site.frac_coords)
-    return Structure(structure.lattice, species, coords, coords_are_cartesian=False)
+# def normalize_structure(structure: Structure) -> Structure:
+#     """
+#     Normalize a structure by setting all site occupancies to 1.
+#     """
+#     species = []
+#     coords = []
+#     for site in structure:
+#         max_species = max(site.species.items(), key=lambda x: x[1])[0]
+#         species.append(max_species)
+#         coords.append(site.frac_coords)
+#     return Structure(structure.lattice, species, coords, coords_are_cartesian=False)
 
 def parse_xy(contents):
     """
