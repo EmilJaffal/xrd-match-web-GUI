@@ -26,7 +26,8 @@ def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, 
             y=experimental_data['intensity'],
             mode='lines', 
             name=exp_filename if exp_filename else 'Experimental data',
-            line=dict(color='black', width=1)
+            line=dict(color='black', width=1),
+            showlegend=False
         ))
     else:
         x_min = min(min(extract_xy(pattern)[0]) for pattern in patterns)
@@ -40,7 +41,8 @@ def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, 
             y=[y_vals[i] for i in valid_indices],
             name=title,
             width=0.15,
-            opacity=opacity
+            opacity=opacity,
+            showlegend=False
         ))
 
     x_lower = int(math.floor(x_min))
@@ -117,23 +119,31 @@ def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, 
                 '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52'
             ]
             
+            # Add experimental data line if present
+            if experimental_data is not None and exp_filename:
+                composition_lines.append(
+                    f'<span style="color:black">—</span> {exp_filename}'
+                )
+            
             for i, (title, intensity) in enumerate(zip(titles, intensity_values)):
                 percentage = (intensity / total_intensity) * 100
                 # Get color - offset by 1 if experimental data is present (black trace comes first)
                 color_idx = i + 1 if experimental_data is not None else i
                 color = plotly_colors[color_idx % len(plotly_colors)]
+                # Strip .cif extension from title
+                clean_title = title.replace('.cif', '') if title.endswith('.cif') else title
                 composition_lines.append(
-                    f'<span style="color:{color}">■</span> {title}: {percentage:.1f}%'
+                    f'<span style="color:{color}">■</span> {clean_title}: {percentage:.1f}%'
                 )
             
             composition_text = "<br>".join(composition_lines)
             
-            # Add annotation in top left
+            # Add annotation in top right
             fig.add_annotation(
                 text=composition_text,
                 xref="paper", yref="paper",
-                x=0.02, y=0.98,
-                xanchor="left", yanchor="top",
+                x=0.98, y=0.98,
+                xanchor="right", yanchor="top",
                 showarrow=False,
                 font=dict(family="Microsoft Sans Serif", size=18, color="black"),
                 bgcolor="rgba(255, 255, 255, 0.8)",

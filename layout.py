@@ -21,9 +21,9 @@ upload_style = {
     "fontWeight": "normal"
 }
 
-# Predefine lattice parameter blocks for up to 5 CIF files.
+# Predefine lattice parameter blocks for up to 6 CIF files.
 # Each block is initially hidden (display: none).
-max_files = 5
+max_files = 6
 lattice_params_blocks = []
 for i in range(1, max_files + 1):
     block = html.Div(
@@ -38,7 +38,7 @@ for i in range(1, max_files + 1):
             "fontWeight": "normal"
         },
         children=[
-            # Reset and Delete buttons (top-right corner)
+            # Reset, Toggle, and Delete buttons (top-right corner)
             html.Div([
                 html.Button(
                     "Reset",
@@ -46,6 +46,21 @@ for i in range(1, max_files + 1):
                     n_clicks=0,
                     style={
                         "backgroundColor": "lightgrey",
+                        "color": "white",
+                        "fontSize": "14px",
+                        "border": "none",
+                        "borderRadius": "8px",
+                        "padding": "4px 8px",
+                        "width": "100px",
+                        "marginRight": "10px"
+                    }
+                ),
+                html.Button(
+                    "Show",
+                    id=f"toggle-{i}",
+                    n_clicks=0,
+                    style={
+                        "backgroundColor": "#2196F3",
                         "color": "white",
                         "fontSize": "14px",
                         "border": "none",
@@ -238,7 +253,7 @@ app.layout = html.Div(
             html.Div(
                 dcc.Upload(
                     id="upload-cif",
-                    children=html.Div("Drop one or more .cif files or click to select (do this first)"),
+                    children=html.Div("Drop one or more .cif files or click to select"),
                     multiple=True,
                     accept=".cif",
                     style=upload_style
@@ -335,7 +350,8 @@ app.layout = html.Div(
         # Hidden stores.
         dcc.Store(id="cif-store"),
         dcc.Store(id="xy-store"),
-        dcc.Store(id="cif-order-store")
+        dcc.Store(id="cif-order-store"),
+        dcc.Store(id="cif-visibility-store", data={})
     ]
 )
 
