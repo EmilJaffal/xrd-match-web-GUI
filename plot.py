@@ -87,21 +87,20 @@ def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, 
             tickvals=big_ticks,
             ticktext=[str(t) for t in big_ticks],
             ticks="",
-            gridcolor='lightgray',
-            gridwidth=1,
+            showgrid=False,
             zeroline=False
         ),
         yaxis=dict(
             title=dict(text="intensity, a.u.", font=dict(family="Microsoft Sans Serif", size=24)),
             range=[0, 105],
-            gridcolor='lightgray',
-            gridwidth=1,
+            showgrid=False,
             tickfont=dict(family="Microsoft Sans Serif", size=24)
         ),
         shapes=tick_shapes,
         template="plotly_white",
         barmode='overlay',
-        plot_bgcolor='white'
+        plot_bgcolor='white',
+        legend=dict(borderwidth=0)
     )
     
     # Add phase composition annotation if intensity values are provided
@@ -147,8 +146,7 @@ def plot_xrd(patterns, titles, wavelength, experimental_data=None, opacity=0.9, 
                 showarrow=False,
                 font=dict(family="Microsoft Sans Serif", size=18, color="black"),
                 bgcolor="rgba(255, 255, 255, 0.8)",
-                bordercolor="black",
-                borderwidth=1,
+                borderwidth=0,
                 borderpad=8,
                 align="left"
             )

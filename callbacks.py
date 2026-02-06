@@ -458,9 +458,9 @@ def update_xrd_plot(xy_data, opacity, exp_intensity, xrange,
                 yaxis=dict(
                     range=[0, 105],
                     dtick=10,
-                    gridcolor='lightgray',
-                    gridwidth=1
-                )
+                    showgrid=False
+                ),
+                legend=dict(borderwidth=0)
             )
             return fig
         else:
@@ -558,9 +558,9 @@ def update_xrd_plot(xy_data, opacity, exp_intensity, xrange,
         yaxis=dict(
             range=[0, max(105, max_y + 5)],
             dtick=10,
-            gridcolor='lightgray',
-            gridwidth=1
-        )
+            showgrid=False
+        ),
+        legend=dict(borderwidth=0)
     )
     return fig
 
@@ -621,7 +621,8 @@ def update_download_link(figure):
             plot_bgcolor='white',
             font=dict(size=14),
             margin=dict(l=50, r=50, t=50, b=50),
-            showlegend=True
+            showlegend=True,
+            legend=dict(borderwidth=0)
         )
         pio.kaleido.scope.mathjax = None
         img_bytes = pio.to_image(
