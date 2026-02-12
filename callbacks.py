@@ -1,4 +1,5 @@
 import base64
+import os
 import pandas as pd
 from dash import Input, Output, State, callback_context, no_update
 import plotly.graph_objects as go
@@ -6,6 +7,7 @@ from layout import app
 from preprocess import parse_xy, parse_cif, XRDCalculator #, normalize_structure
 from plot import plot_xrd
 from pymatgen.core import Structure
+from pymatgen.io.cif import CifParser
 import plotly.io as pio
 import io
 import json
@@ -91,9 +93,21 @@ def store_cif_files(contents_list, filenames, existing_data, existing_order, vis
     [Output(f"lattice-{i}-beta", "value") for i in range(1, 7)] +
     [Output(f"lattice-{i}-gamma", "value") for i in range(1, 7)],
     Input("cif-store", "data"),
-    Input("cif-order-store", "data")
+    Input("cif-order-store", "data"),
+    [State(f"lattice-{i}-a", "value") for i in range(1, 7)] +
+    [State(f"lattice-{i}-b", "value") for i in range(1, 7)] +
+    [State(f"lattice-{i}-c", "value") for i in range(1, 7)] +
+    [State(f"lattice-{i}-alpha", "value") for i in range(1, 7)] +
+    [State(f"lattice-{i}-beta", "value") for i in range(1, 7)] +
+    [State(f"lattice-{i}-gamma", "value") for i in range(1, 7)]
 )
-def update_lattice_params_blocks(cif_data, cif_order):
+def update_lattice_params_blocks(cif_data, cif_order,
+                                 a1, a2, a3, a4, a5, a6,
+                                 b1, b2, b3, b4, b5, b6,
+                                 c1, c2, c3, c4, c5, c6,
+                                 alpha1, alpha2, alpha3, alpha4, alpha5, alpha6,
+                                 beta1, beta2, beta3, beta4, beta5, beta6,
+                                 gamma1, gamma2, gamma3, gamma4, gamma5, gamma6):
     style_outputs = []
     header_outputs = []
     a_outputs = []
@@ -102,6 +116,12 @@ def update_lattice_params_blocks(cif_data, cif_order):
     alpha_outputs = []
     beta_outputs = []
     gamma_outputs = []
+    current_a = [a1, a2, a3, a4, a5, a6]
+    current_b = [b1, b2, b3, b4, b5, b6]
+    current_c = [c1, c2, c3, c4, c5, c6]
+    current_alpha = [alpha1, alpha2, alpha3, alpha4, alpha5, alpha6]
+    current_beta = [beta1, beta2, beta3, beta4, beta5, beta6]
+    current_gamma = [gamma1, gamma2, gamma3, gamma4, gamma5, gamma6]
     
     file_names = cif_order if cif_order else []
     num_files = len(file_names)
@@ -124,12 +144,30 @@ def update_lattice_params_blocks(cif_data, cif_order):
                     "fontSize": "24px"
                 })
                 header_outputs.append(file_names[i])
-                a_outputs.append(round(lattice.a, 4))
-                b_outputs.append(round(lattice.b, 4))
-                c_outputs.append(round(lattice.c, 4))
-                alpha_outputs.append(round(lattice.alpha, 4))
-                beta_outputs.append(round(lattice.beta, 4))
-                gamma_outputs.append(round(lattice.gamma, 4))
+                if current_a[i] is None:
+                    a_outputs.append(round(lattice.a, 4))
+                else:
+                    a_outputs.append(current_a[i])
+                if current_b[i] is None:
+                    b_outputs.append(round(lattice.b, 4))
+                else:
+                    b_outputs.append(current_b[i])
+                if current_c[i] is None:
+                    c_outputs.append(round(lattice.c, 4))
+                else:
+                    c_outputs.append(current_c[i])
+                if current_alpha[i] is None:
+                    alpha_outputs.append(round(lattice.alpha, 4))
+                else:
+                    alpha_outputs.append(current_alpha[i])
+                if current_beta[i] is None:
+                    beta_outputs.append(round(lattice.beta, 4))
+                else:
+                    beta_outputs.append(current_beta[i])
+                if current_gamma[i] is None:
+                    gamma_outputs.append(round(lattice.gamma, 4))
+                else:
+                    gamma_outputs.append(current_gamma[i])
             except Exception as e:
                 print("Error parsing CIF for lattice block:", e)
                 style_outputs.append({"display": "none"})
@@ -640,3 +678,226 @@ def update_download_link(figure):
     except Exception as e:
         print("Error in generating download link:", e)
         return ""
+
+# ------------------------------------------------------------------
+# Pawley .inp Generation & Clipboard Copy
+# ------------------------------------------------------------------
+def _extract_space_group(cif_contents, structure=None):
+    try:
+        content_type, content_string = cif_contents.split(',')
+        decoded = base64.b64decode(content_string).decode('utf-8', errors='ignore')
+        parser = CifParser(io.StringIO(decoded))
+        cif_dict = parser.as_dict()
+        if cif_dict:
+            first_key = list(cif_dict.keys())[0]
+            data = cif_dict[first_key]
+            for key in data.keys():
+                if key.lower() in ("_space_group_name_h-m_alt", "_symmetry_space_group_name_h-m"):
+                    value = data[key]
+                    if isinstance(value, list):
+                        value = value[0]
+                    value = value.strip().strip("'").strip('"')
+                    return "".join(value.split())
+    except Exception as e:
+        print("Error extracting space group:", e)
+    if structure is not None:
+        try:
+            from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+            sg = SpacegroupAnalyzer(structure).get_space_group_symbol()
+            return "".join(sg.split())
+        except Exception as e:
+            print("Fallback space group error:", e)
+    return ""
+
+def _format_lattice_line(param, value, use_lpa):
+    tag = "lpa" if use_lpa else "@"
+    return f"\t\t{param} {tag}  {value:.6f}"
+
+def _build_pawley_content(xy_filename, cif_entries):
+    lines = []
+    lines.append("r_wp 0 r_exp 0 r_p 0 r_wp_dash 0 r_p_dash 0 r_exp_dash 0 weighted_Durbin_Watson 0 gof 0")
+    lines.append("")
+    lines.append("iters 100000")
+    lines.append("chi2_convergence_criteria 0.001")
+    lines.append("do_errors")
+    lines.append("")
+    lines.append(f"xdd {xy_filename}")
+    lines.append("\tx_calculation_step = Yobs_dx_at(Xo); convolution_step 4")
+    lines.append("\tbkg @ 0 0 0 0 0 0")
+    lines.append("")
+    lines.append("\tlam")
+    lines.append("\t\tymin_on_ymax 0.0001")
+    lines.append("\t\tla 0.653817 lo 1.540596  lh 0.501844")
+    lines.append("\t\tla 0.346183 lo 1.544493  lh 0.626579")
+    lines.append("")
+    lines.append("\t'Zero_Error(zero,0)")
+    lines.append("")
+
+    lpa_used = False
+    for idx, entry in enumerate(cif_entries):
+        suffix = "" if idx == 0 else str(idx)
+        pku = f"pku{suffix}"
+        pkv = f"pkv{suffix}"
+        pkw = f"pkw{suffix}"
+        pkx = f"pkx{suffix}"
+        pky = f"pky{suffix}"
+        pkz = f"pkz{suffix}"
+        axial = f"axial{suffix}"
+
+        a = entry["a"]
+        b = entry["b"]
+        c = entry["c"]
+        al = entry["alpha"]
+        be = entry["beta"]
+        ga = entry["gamma"]
+        phase_name = entry["phase_name"]
+        space_group = entry["space_group"]
+
+        ab_equal = abs(a - b) <= 1e-6
+        ac_equal = abs(a - c) <= 1e-6
+        bc_equal = abs(b - c) <= 1e-6
+        can_use_lpa = (ab_equal or ac_equal or bc_equal) and not lpa_used
+        if can_use_lpa:
+            lpa_used = True
+
+        lines.append("\thkl_Is")
+        lines.append(
+            f"\t\tTCHZ_Peak_Type({pku}, 0.00039,{pkv}, -0.00221,{pkw}, -0.00146,!{pkx}, 0.0000,{pky}, 0.00957,!{pkz}, 0.0000)"
+        )
+        lines.append(f"\t\tSimple_Axial_Model(!{axial},10)")
+        lines.append("")
+        use_lpa_a = can_use_lpa and (ab_equal or ac_equal)
+        use_lpa_b = can_use_lpa and (ab_equal or bc_equal)
+        use_lpa_c = can_use_lpa and (ac_equal or bc_equal)
+        lines.append(_format_lattice_line("a", a, use_lpa_a))
+        lines.append(_format_lattice_line("b", b, use_lpa_b))
+        lines.append(_format_lattice_line("c", c, use_lpa_c))
+        lines.append(f"\t\tal {al:.6f}")
+        lines.append(f"\t\tbe {be:.6f}")
+        lines.append(f"\t\tga {ga:.6f}")
+        lines.append(f"\t\tCreate_2Th_Ip_file({phase_name}-hkl)")
+        lines.append(f"\t\tphase_name \"{phase_name}\"")
+        lines.append(f"\t\tspace_group \"{space_group}\"")
+        lines.append("")
+
+    return "\n".join(lines).strip() + "\n"
+
+@app.callback(
+    Output("pawley-content-store", "data"),
+    Input("generate-pawley-btn", "n_clicks"),
+    [State("upload-xy", "filename"),
+     State("cif-store", "data"),
+     State("cif-order-store", "data"),
+     State("cif-visibility-store", "data"),
+     State("lattice-1-a", "value"),
+     State("lattice-2-a", "value"),
+     State("lattice-3-a", "value"),
+     State("lattice-4-a", "value"),
+     State("lattice-5-a", "value"),
+     State("lattice-6-a", "value"),
+     State("lattice-1-b", "value"),
+     State("lattice-2-b", "value"),
+     State("lattice-3-b", "value"),
+     State("lattice-4-b", "value"),
+     State("lattice-5-b", "value"),
+     State("lattice-6-b", "value"),
+     State("lattice-1-c", "value"),
+     State("lattice-2-c", "value"),
+     State("lattice-3-c", "value"),
+     State("lattice-4-c", "value"),
+     State("lattice-5-c", "value"),
+     State("lattice-6-c", "value"),
+     State("lattice-1-alpha", "value"),
+     State("lattice-2-alpha", "value"),
+     State("lattice-3-alpha", "value"),
+     State("lattice-4-alpha", "value"),
+     State("lattice-5-alpha", "value"),
+     State("lattice-6-alpha", "value"),
+     State("lattice-1-beta", "value"),
+     State("lattice-2-beta", "value"),
+     State("lattice-3-beta", "value"),
+     State("lattice-4-beta", "value"),
+     State("lattice-5-beta", "value"),
+     State("lattice-6-beta", "value"),
+     State("lattice-1-gamma", "value"),
+     State("lattice-2-gamma", "value"),
+     State("lattice-3-gamma", "value"),
+     State("lattice-4-gamma", "value"),
+     State("lattice-5-gamma", "value"),
+     State("lattice-6-gamma", "value")],
+    prevent_initial_call=True
+)
+def generate_pawley_inp(n_clicks, xy_filename, cif_data, cif_order, visibility_state,
+                        a1, a2, a3, a4, a5, a6,
+                        b1, b2, b3, b4, b5, b6,
+                        c1, c2, c3, c4, c5, c6,
+                        alpha1, alpha2, alpha3, alpha4, alpha5, alpha6,
+                        beta1, beta2, beta3, beta4, beta5, beta6,
+                        gamma1, gamma2, gamma3, gamma4, gamma5, gamma6):
+    if not n_clicks:
+        return no_update
+
+    file_names = cif_order if cif_order else []
+    if not cif_data or len(file_names) == 0:
+        return ""
+
+    xy_name = xy_filename if xy_filename else "RENAME.xy"
+    a_vals = [a1, a2, a3, a4, a5, a6]
+    b_vals = [b1, b2, b3, b4, b5, b6]
+    c_vals = [c1, c2, c3, c4, c5, c6]
+    alpha_vals = [alpha1, alpha2, alpha3, alpha4, alpha5, alpha6]
+    beta_vals = [beta1, beta2, beta3, beta4, beta5, beta6]
+    gamma_vals = [gamma1, gamma2, gamma3, gamma4, gamma5, gamma6]
+
+    cif_entries = []
+    for i, file_name in enumerate(file_names):
+        if visibility_state and file_name in visibility_state and not visibility_state[file_name]:
+            continue
+        if a_vals[i] is None or b_vals[i] is None or c_vals[i] is None:
+            continue
+        try:
+            structure = parse_cif(cif_data[file_name])
+            space_group = _extract_space_group(cif_data[file_name], structure)
+        except Exception as e:
+            print("Error parsing CIF for Pawley:", e)
+            space_group = ""
+
+        phase_name = file_name[:-4] if file_name.lower().endswith('.cif') else file_name
+        cif_entries.append({
+            "a": float(a_vals[i]),
+            "b": float(b_vals[i]),
+            "c": float(c_vals[i]),
+            "alpha": float(alpha_vals[i]) if alpha_vals[i] is not None else 90.0,
+            "beta": float(beta_vals[i]) if beta_vals[i] is not None else 90.0,
+            "gamma": float(gamma_vals[i]) if gamma_vals[i] is not None else 90.0,
+            "phase_name": phase_name,
+            "space_group": space_group
+        })
+
+    content = _build_pawley_content(xy_name, cif_entries)
+
+    try:
+        output_path = os.path.join(os.getcwd(), "pawley.inp")
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(content)
+    except Exception as e:
+        print("Error saving pawley.inp:", e)
+
+    return content
+
+app.clientside_callback(
+    """
+    function(content) {
+        if (!content) {
+            return "";
+        }
+        if (navigator && navigator.clipboard) {
+            navigator.clipboard.writeText(content);
+            return "Copied!";
+        }
+        return "Copy failed";
+    }
+    """,
+    Output("pawley-copy-status", "children"),
+    Input("pawley-content-store", "data")
+)

@@ -244,6 +244,35 @@ app.layout = html.Div(
                         }
                     ),
                     style={"width": "10%", "display": "inline-block", "verticalAlign": "middle"}
+                ),
+                html.Div(
+                    [
+                        html.Button(
+                            "Generate Pawley .inp",
+                            id="generate-pawley-btn",
+                            n_clicks=0,
+                            style={
+                                "marginLeft": "12px",
+                                "padding": "6px 10px",
+                                "backgroundColor": "#4CAF50",
+                                "color": "white",
+                                "border": "none",
+                                "borderRadius": "4px",
+                                "cursor": "pointer",
+                                "fontSize": "14px",
+                                "height": "32px"
+                            }
+                        ),
+                        html.Span(
+                            id="pawley-copy-status",
+                            style={
+                                "marginLeft": "8px",
+                                "color": "green",
+                                "fontSize": "14px"
+                            }
+                        )
+                    ],
+                    style={"display": "inline-flex", "alignItems": "center", "verticalAlign": "middle"}
                 )
             ], style={"width": "50%", "display": "inline-block"})
         ], style={"display": "flex", "width": "100%"}),
@@ -351,7 +380,8 @@ app.layout = html.Div(
         dcc.Store(id="cif-store"),
         dcc.Store(id="xy-store"),
         dcc.Store(id="cif-order-store"),
-        dcc.Store(id="cif-visibility-store", data={})
+        dcc.Store(id="cif-visibility-store", data={}),
+        dcc.Store(id="pawley-content-store")
     ]
 )
 

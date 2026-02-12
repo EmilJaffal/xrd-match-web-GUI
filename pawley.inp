@@ -1,0 +1,58 @@
+r_wp 0 r_exp 0 r_p 0 r_wp_dash 0 r_p_dash 0 r_exp_dash 0 weighted_Durbin_Watson 0 gof 0
+
+iters 100000
+chi2_convergence_criteria 0.001
+do_errors
+
+xdd 457.xy
+	x_calculation_step = Yobs_dx_at(Xo); convolution_step 4
+	bkg @ 0 0 0 0 0 0
+
+	lam
+		ymin_on_ymax 0.0001
+		la 0.653817 lo 1.540596  lh 0.501844
+		la 0.346183 lo 1.544493  lh 0.626579
+
+	'Zero_Error(zero,0)
+
+	hkl_Is
+		TCHZ_Peak_Type(pku, 0.00039,pkv, -0.00221,pkw, -0.00146,!pkx, 0.0000,pky, 0.00957,!pkz, 0.0000)
+		Simple_Axial_Model(!axial,10)
+
+		a @  7.611500
+		b @  18.317900
+		c @  5.591900
+		al 90.000000
+		be 90.000000
+		ga 90.000000
+		Create_2Th_Ip_file(Dy4Rh3Ga3 (Ce4Ru3Ga3)-hkl)
+		phase_name "Dy4Rh3Ga3 (Ce4Ru3Ga3)"
+		space_group "Pnna"
+
+	hkl_Is
+		TCHZ_Peak_Type(pku1, 0.00039,pkv1, -0.00221,pkw1, -0.00146,!pkx1, 0.0000,pky1, 0.00957,!pkz1, 0.0000)
+		Simple_Axial_Model(!axial1,10)
+
+		a lpa  11.635200
+		b lpa  11.635200
+		c @  15.503500
+		al 90.000000
+		be 90.000000
+		ga 90.000000
+		Create_2Th_Ip_file(Dy26Rh11Ga6-hkl)
+		phase_name "Dy26Rh11Ga6"
+		space_group "P4/mbm"
+
+	hkl_Is
+		TCHZ_Peak_Type(pku2, 0.00039,pkv2, -0.00221,pkw2, -0.00146,!pkx2, 0.0000,pky2, 0.00957,!pkz2, 0.0000)
+		Simple_Axial_Model(!axial2,10)
+
+		a @  6.784000
+		b @  4.249900
+		c @  7.780000
+		al 90.000000
+		be 90.000000
+		ga 90.000000
+		Create_2Th_Ip_file(DyRhGa-hkl)
+		phase_name "DyRhGa"
+		space_group "Pnma"
