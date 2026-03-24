@@ -721,6 +721,9 @@ def _format_lattice_line(param, value, use_lpa):
     tag = "lpa" if use_lpa else "@"
     return f"\t\t{param} {tag}  {value:.6f}"
 
+def _lpa_equal(v1, v2, decimals=4):
+    return round(float(v1), decimals) == round(float(v2), decimals)
+
 def _build_pawley_content(xy_filename, cif_entries):
     lines = []
     lines.append("r_wp 0 r_exp 0 r_p 0 r_wp_dash 0 r_p_dash 0 r_exp_dash 0 weighted_Durbin_Watson 0 gof 0")
@@ -761,9 +764,9 @@ def _build_pawley_content(xy_filename, cif_entries):
         phase_name = entry["phase_name"]
         space_group = entry["space_group"]
 
-        ab_equal = abs(a - b) <= 1e-6
-        ac_equal = abs(a - c) <= 1e-6
-        bc_equal = abs(b - c) <= 1e-6
+        ab_equal = _lpa_equal(a, b)
+        ac_equal = _lpa_equal(a, c)
+        bc_equal = _lpa_equal(b, c)
         can_use_lpa = (ab_equal or ac_equal or bc_equal) and not lpa_used
         if can_use_lpa:
             lpa_used = True
@@ -892,6 +895,28 @@ def generate_pawley_inp(n_clicks, xy_filename, cif_data, cif_order, visibility_s
         print("Error saving pawley.inp:", e)
 
     return content
+
+@app.callback(
+    Output("pawley-download", "data"),
+    Input("pawley-content-store", "data"),
+    State("upload-xy", "filename"),
+    prevent_initial_call=True
+)
+def download_pawley_inp(content, xy_filename):
+    if not content:
+        return no_update
+
+    download_name = "pawley.inp"
+    if xy_filename:
+        stem, ext = os.path.splitext(os.path.basename(xy_filename))
+        if stem and ext.lower() == ".xy":
+            download_name = f"{stem}_pawley.inp"
+
+    return {
+        "content": content,
+        "filename": download_name,
+        "type": "text/plain"
+    }
 
 app.clientside_callback(
     """
