@@ -381,7 +381,8 @@ app.layout = html.Div(
         dcc.Store(id="xy-store"),
         dcc.Store(id="cif-order-store"),
         dcc.Store(id="cif-visibility-store", data={}),
-        dcc.Store(id="pawley-content-store")
+        dcc.Store(id="pawley-content-store"),
+        dcc.Download(id="pawley-download")
     ]
 )
 
