@@ -643,12 +643,20 @@ def toggle_trace_visibility(click_data, figure):
 # Download Link Callback
 # ------------------------------------------------------------------
 @app.callback(
-    Output("download-link", "href"),
-    Input("xrd-plot", "figure")
+    [Output("download-link", "href"),
+     Output("download-link", "download")],
+    Input("xrd-plot", "figure"),
+    State("upload-xy", "filename")
 )
-def update_download_link(figure):
+def update_download_link(figure, xy_filename):
+    download_name = "xrd_pattern.png"
+    if xy_filename:
+        stem, ext = os.path.splitext(os.path.basename(xy_filename))
+        if stem and ext.lower() == ".xy":
+            download_name = f"{stem}_xrd.png"
+
     if not figure:
-        return ""
+        return "", download_name
     try:
         
         fig = go.Figure(figure)
@@ -674,10 +682,10 @@ def update_download_link(figure):
         )
         b64_str = base64.b64encode(img_bytes).decode("ascii")
         href = f"data:image/png;base64,{b64_str}"
-        return href
+        return href, download_name
     except Exception as e:
         print("Error in generating download link:", e)
-        return ""
+        return "", download_name
 
 # ------------------------------------------------------------------
 # Pawley .inp Generation & Clipboard Copy

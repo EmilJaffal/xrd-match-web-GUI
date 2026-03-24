@@ -98,7 +98,7 @@ for i in range(1, max_files + 1):
                     dcc.Input(
                         id=f"lattice-{i}-a",
                         type="number",
-                        step=0.1,
+                        step="0.01",
                         style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                     )
                 ], style={"display": "inline-block", "marginRight": "10px"}),
@@ -108,7 +108,7 @@ for i in range(1, max_files + 1):
                     dcc.Input(
                         id=f"lattice-{i}-b",
                         type="number",
-                        step=0.1,
+                        step="0.01",
                         style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                     )
                 ], style={"display": "inline-block", "marginRight": "10px"}),
@@ -118,7 +118,7 @@ for i in range(1, max_files + 1):
                     dcc.Input(
                         id=f"lattice-{i}-c",
                         type="number",
-                        step=0.1,
+                        step="0.01",
                         style={"width": "100px", "height": "28px", "fontSize": "18px", "margin": "15px"}
                     )
                 ], style={"display": "inline-block", "marginRight": "10px"}),
